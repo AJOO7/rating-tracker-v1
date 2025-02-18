@@ -49,7 +49,7 @@ export default function Home() {
       const jsonData: { x: number; b: number; T: number }[] =
         XLSX.utils.sheet_to_json(sheet);
 
-      let previousRating = 50.0;
+      let previousRating = 25.0;
       const computedRatings = jsonData.map(({ x, b, T }) => {
         const rating = calculateFinalScore([[x, b, T]], previousRating);
         previousRating = rating;
@@ -165,8 +165,8 @@ export default function Home() {
 
 function calculateFinalScore(
   itemData: [number, number, number][],
-  initialTheta = 50.0,
-  sigma = 5.0
+  initialTheta = 25.0,
+  sigma = 2.0
 ) {
   let theta = initialTheta;
   for (const [x, b, T] of itemData) {
@@ -206,11 +206,13 @@ function negLogPosterior(
 ) {
   let p = probabilityCorrect(theta, b, T);
   p = Math.max(1e-6, Math.min(p, 1 - 1e-6));
+  let weight = (b > theta) ? (b - theta) / 20 : 0;
+
   const negLogLikelihood = -(
-    x * Math.log(p) +
-    (1 - x) * Math.log(1 - p)
+    x * (1 + weight) * Math.log(p) +
+    (1 - x) * (1 - weight) * Math.log(1 - p)
   );
-  const negLogPrior = 0.5 * ((theta - thetaPrior) / sigma) ** 2;
+  const negLogPrior = 1.0 * ((theta - thetaPrior) / sigma) ** 2;
   return negLogLikelihood + negLogPrior;
 }
 
@@ -223,13 +225,12 @@ function getParameters(b: number, T: number) {
   const sBase = baseSlope(b);
   const TRefVal = refTime(b);
   const c = guessingFactor(b);
-  const sEff = sBase * (Math.log(T + 1) / Math.log(TRefVal + 1));
+  const sEff = sBase * Math.pow((Math.log(T + 1) / Math.log(TRefVal + 1)), 2);
   return { sEff, c };
 }
 
 function baseSlope(b: number) {
-  const factor = 0.5;
-  return factor * (3 + 10 * (b / 100.0));
+  return 6 + 20 * (b / 100.0);
 }
 
 function refTime(b: number) {
