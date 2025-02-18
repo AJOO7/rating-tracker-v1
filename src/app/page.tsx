@@ -206,7 +206,7 @@ function negLogPosterior(
 ) {
   let p = probabilityCorrect(theta, b, T);
   p = Math.max(1e-6, Math.min(p, 1 - 1e-6));
-  let weight = (b > theta) ? (b - theta) / 20 : 0;
+  const weight = (b > theta) ? (b - theta) / 20 : 0;
 
   const negLogLikelihood = -(
     x * (1 + weight) * Math.log(p) +
